@@ -10,7 +10,7 @@ from functools import lru_cache
 
 # kis_api 모듈 import를 위한 경로 추가
 sys.path.append('../kis_api')
-from kis_api import get_access_token, get_investor_info
+from kis_api import get_access_token, get_daily_price
 
 # 글로벌 캐시 딕셔너리
 price_cache = {}
@@ -128,7 +128,7 @@ def get_historical_price(stock_code, date_str, current_price=None, use_cache=Tru
 
 
 def get_current_stock_prices():
-    """실제 주식 현재가를 FinanceDataReader로 가져오기 (KOSPI + KOSDAQ)"""
+    """KIS API로 실제 주식 현재가 가져오기 (KOSPI + KOSDAQ)"""
     stock_codes = {
         # KOSPI 종목
         "005930": "삼성전자",
@@ -158,41 +158,190 @@ def get_current_stock_prices():
     
     current_prices = {}
     
-    for i, (code, name) in enumerate(stock_codes.items()):
-        try:
-            # FinanceDataReader로 현재가 가져오기 (2025년 7월 1일부터)
-            stock_data = fdr.DataReader(code, '2025-07-01')
-            if not stock_data.empty:
-                current_price = int(stock_data['Close'].iloc[-1])
-                current_prices[code] = current_price
-                print(f"✅ {name}({code}): {current_price:,}원")
-            else:
-                # 데이터가 없으면 기본값 사용
+    try:
+        # KIS API 토큰 발급
+        print("🔑 KIS API 토큰 발급 중...")
+        token = get_access_token()
+        
+        # 병렬 처리로 빠르게 가져오기
+        print("🚀 병렬 처리로 현재가 조회 중...")
+        
+        def get_single_price(args):
+            code, name = args
+            try:
+                # 일자별 정보에서 최신 종가 가져오기
+                daily_data = get_daily_price(code, token)
+                if (daily_data and daily_data.get('rt_cd') == '0' and 
+                    daily_data.get('output') and 
+                    len(daily_data['output']) > 0):
+                    # 첫 번째 데이터가 가장 최신
+                    latest_data = daily_data['output'][0]
+                    price = int(latest_data.get('stck_clpr', 0))
+                    if price > 0:
+                        return code, name, price, "성공"
+                
+                # 데이터가 없거나 가격이 0인 경우 기본값 사용
                 kosdaq_codes = ('086520', '112040', '196170', '028300',
                                 '293490', '263750', '096530', '086900')
                 if code.startswith(kosdaq_codes):
-                    # KOSDAQ 종목은 좀 더 낮은 가격대
-                    current_prices[code] = random.randint(20000, 150000)
+                    default_price = random.randint(20000, 150000)
                 else:
-                    current_prices[code] = random.randint(50000, 300000)
-                print(f"⚠️  {name}({code}): 기본값 사용")
-        except Exception as e:
-            # 오류 발생시 기본값 사용
+                    default_price = random.randint(50000, 300000)
+                return code, name, default_price, "기본값"
+                
+            except Exception as e:
+                # 오류시 기본값 사용
+                kosdaq_codes = ('086520', '112040', '196170', '028300',
+                                '293490', '263750', '096530', '086900')
+                if code.startswith(kosdaq_codes):
+                    default_price = random.randint(20000, 150000)
+                else:
+                    default_price = random.randint(50000, 300000)
+                return code, name, default_price, f"오류: {e}"
+        
+        # 병렬 처리로 모든 종목 현재가 조회
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            args_list = list(stock_codes.items())
+            results = list(executor.map(get_single_price, args_list))
+        
+        # 결과 처리
+        for code, name, price, status in results:
+            current_prices[code] = price
+            if status == "성공":
+                print(f"✅ {name}({code}): {price:,}원")
+            elif status == "기본값":
+                print(f"⚠️  {name}({code}): {price:,}원 (기본값)")
+            else:
+                print(f"❌ {name}({code}): {price:,}원 ({status})")
+        
+        print(f"🎯 총 {len(current_prices)}개 종목 현재가 조회 완료")
+        
+    except Exception as e:
+        print(f"❌ KIS API 토큰 발급 실패: {e}")
+        print("🔄 기본값으로 대체...")
+        
+        # 토큰 발급 실패시 모두 기본값 사용
+        for code, name in stock_codes.items():
             kosdaq_codes = ('086520', '112040', '196170', '028300',
                             '293490', '263750', '096530', '086900')
             if code.startswith(kosdaq_codes):
-                # KOSDAQ 종목은 좀 더 낮은 가격대
                 current_prices[code] = random.randint(20000, 150000)
             else:
                 current_prices[code] = random.randint(50000, 300000)
-            print(f"❌ {name}({code}): 오류 - {e}")
-        
-        # API 호출 간격 조절 (1개마다 2초 대기)
-        if i < len(stock_codes) - 1:
-            print(f"⏳ API 호출 간격 대기 중... ({i+1}/{len(stock_codes)})")
-            time.sleep(0.5)
+            print(f"🔢 {name}({code}): {current_prices[code]:,}원 (기본값)")
     
     return current_prices
+
+
+def process_single_stock_portfolio(args):
+    """단일 종목 포트폴리오 처리 (병렬 처리용)"""
+    stock, persona_name, persona_data, stock_prices = args
+    
+    print(f"📊 {stock['prdt_name']} 거래내역 생성 중...")
+    
+    # 투자 금액 계산
+    investment_amount = int(
+        persona_data["total_investment"] * stock["weight"]
+    )
+    
+    # 실제 현재가 사용
+    current_price = stock_prices.get(
+        stock["pdno"], 
+        random.randint(20000, 150000) if stock["market"] == "KOSDAQ" 
+        else random.randint(50000, 300000)
+    )
+    
+    # 목표 보유수량 계산 (대략적)
+    target_qty = max(1, investment_amount // current_price)
+    
+    # 실제 거래내역 및 평균 매입가 생성
+    (transactions, avg_price, first_purchase_date,
+     last_purchase_date) = generate_stock_transactions(
+        stock, persona_name, target_qty, current_price
+    )
+    
+    # 실제 보유수량과 매입금액 계산
+    holding_qty = sum(t["거래수량"] for t in transactions)
+    actual_investment = sum(t["거래금액"] for t in transactions)
+    current_value = holding_qty * current_price
+    
+    # 평가손익 계산
+    profit_loss = current_value - actual_investment
+    profit_loss_rate = (
+        (profit_loss / actual_investment) * 100 
+        if actual_investment > 0 else 0
+    )
+    
+    # 전일 대비 등락 (KOSDAQ 변동성이 더 큼)
+    if stock["market"] == "KOSDAQ":
+        price_change = random.randint(-5000, 5000)
+    else:
+        price_change = random.randint(-3000, 3000)
+    
+    change_rate = (
+        (price_change / current_price) * 100 
+        if current_price > 0 else 0
+    )
+    
+    # 거래 수량 (페르소나별 특성 반영)
+    today_buy_qty = 0
+    today_sell_qty = 0
+    yesterday_buy_qty = 0
+    yesterday_sell_qty = 0
+    
+    if persona_name == "김미래":
+        trading_prob = 0.6 if stock["market"] == "KOSDAQ" else 0.5
+        if random.random() < trading_prob:
+            if random.random() < 0.7:
+                today_buy_qty = random.randint(1, 3)
+            else:
+                today_sell_qty = random.randint(1, min(2, holding_qty))
+        
+        if random.random() < 0.4:
+            if random.random() < 0.6:
+                yesterday_buy_qty = random.randint(1, 2)
+            else:
+                yesterday_sell_qty = random.randint(1, 1)
+    
+    # output1 필드 구성
+    stock_data = {
+        "pdno": stock["pdno"],
+        "prdt_name": stock["prdt_name"],
+        "trad_dvsn_name": "매수",
+        "bfdy_buy_qty": str(yesterday_buy_qty),
+        "bfdy_sll_qty": str(yesterday_sell_qty),
+        "thdt_buyqty": str(today_buy_qty),
+        "thdt_sll_qty": str(today_sell_qty),
+        "hldg_qty": str(holding_qty),
+        "ord_psbl_qty": str(holding_qty),
+        "pchs_avg_pric": f"{avg_price:.2f}",
+        "pchs_amt": str(actual_investment),
+        "prpr": str(current_price),
+        "evlu_amt": str(current_value),
+        "evlu_pfls_amt": str(profit_loss),
+        "evlu_pfls_rt": f"{profit_loss_rate:.2f}",
+        "evlu_erng_rt": "0",
+        "loan_dt": "",
+        "loan_amt": "0",
+        "stln_slng_chgs": "0",
+        "expd_dt": "",
+        "fltt_rt": f"{change_rate:.2f}",
+        "bfdy_cprs_icdc": str(price_change),
+        "item_mgna_rt_name": "40%",
+        "grta_rt_name": "40%",
+        "sbst_pric": str(current_price),
+        "stck_loan_unpr": "0",
+        "pchs_dt": last_purchase_date,
+        "frst_pchs_dt": first_purchase_date
+    }
+    
+    return {
+        "stock_data": stock_data,
+        "current_value": current_value,
+        "actual_investment": actual_investment,
+        "profit_loss": profit_loss,
+        "transactions": transactions
+    }
 
 
 def generate_purchase_dates_and_history(persona_name):
@@ -456,8 +605,12 @@ def convert_to_korean_api_format(data):
 def generate_persona_portfolios():
     """
     3명의 페르소나별 국내주식 전용 포트폴리오 데이터 생성 
-    (KOSDAQ 종목 포함, 실제 매수일자 반영)
+    (KOSDAQ 종목 포함, 실제 매수일자 반영, 최적화된 버전)
     """
+    
+    # 캐시 로드
+    print("📁 주가 캐시 로딩 중...")
+    load_price_cache()
     
     # 실제 현재가 가져오기
     print("📈 실제 주식 현재가 가져오는 중...")
@@ -545,117 +698,30 @@ def generate_persona_portfolios():
         print(f"\n=== {persona_name} 포트폴리오 및 거래내역 생성 중... ===")
         stocks = stock_preferences[persona_name]
         
-        # output1 데이터 생성 (보유 종목별 상세)
+        # 병렬 처리를 위한 인자 준비
+        args_list = [
+            (stock, persona_name, persona_data, stock_prices) 
+            for stock in stocks
+        ]
+        
+        # 병렬 처리로 종목별 포트폴리오 생성
+        print(f"🚀 {len(stocks)}개 종목을 병렬 처리로 생성 중...")
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            results = list(executor.map(process_single_stock_portfolio, args_list))
+        
+        # 결과 취합
         output1_data = []
         total_portfolio_value = 0
         total_purchase_amount = 0
         total_profit_loss = 0
-        all_transactions = []  # 전체 거래내역
+        all_transactions = []
         
-        for stock in stocks:
-            print(f"📊 {stock['prdt_name']} 거래내역 생성 중...")
-            
-            # 투자 금액 계산
-            investment_amount = int(
-                persona_data["total_investment"] * stock["weight"]
-            )
-            
-            # 실제 현재가 사용
-            current_price = stock_prices.get(
-                stock["pdno"], 
-                random.randint(20000, 150000) if stock["market"] == "KOSDAQ" 
-                else random.randint(50000, 300000)
-            )
-            
-            # 목표 보유수량 계산 (대략적)
-            target_qty = max(1, investment_amount // current_price)
-            
-            # 실제 거래내역 및 평균 매입가 생성
-            (transactions, avg_price, first_purchase_date,
-             last_purchase_date) = generate_stock_transactions(
-                stock, persona_name, target_qty, current_price
-            )
-            
-            # 실제 보유수량과 매입금액 계산
-            holding_qty = sum(t["거래수량"] for t in transactions)
-            actual_investment = sum(t["거래금액"] for t in transactions)
-            current_value = holding_qty * current_price
-            
-            # 평가손익 계산
-            profit_loss = current_value - actual_investment
-            profit_loss_rate = (
-                (profit_loss / actual_investment) * 100 
-                if actual_investment > 0 else 0
-            )
-            
-            # 전일 대비 등락 (KOSDAQ 변동성이 더 큼)
-            if stock["market"] == "KOSDAQ":
-                price_change = random.randint(-5000, 5000)  # KOSDAQ 더 높은 변동성
-            else:
-                price_change = random.randint(-3000, 3000)
-            
-            change_rate = (
-                (price_change / current_price) * 100 
-                if current_price > 0 else 0
-            )
-            
-            # 거래 수량 (페르소나별 특성 반영)
-            today_buy_qty = 0
-            today_sell_qty = 0
-            yesterday_buy_qty = 0
-            yesterday_sell_qty = 0
-            
-            if persona_name == "김미래":  # 20대: 단타 거래 위주 (매우 활발한 거래)
-                trading_prob = 0.6 if stock["market"] == "KOSDAQ" else 0.5
-                if random.random() < trading_prob:  # 거래 확률
-                    if random.random() < 0.7:  # 매수 확률이 높음
-                        today_buy_qty = random.randint(1, 3)
-                    else:
-                        today_sell_qty = random.randint(1, min(2, holding_qty))
-                
-                if random.random() < 0.4:  # 40% 확률로 어제도 거래
-                    if random.random() < 0.6:
-                        yesterday_buy_qty = random.randint(1, 2)
-                    else:
-                        yesterday_sell_qty = random.randint(1, 1)
-            
-            # output1 필드 구성 (한국투자증권 API 형식) - 매수일자 필드 추가
-            stock_data = {
-                "pdno": stock["pdno"],
-                "prdt_name": stock["prdt_name"],
-                "trad_dvsn_name": "매수",
-                "bfdy_buy_qty": str(yesterday_buy_qty),
-                "bfdy_sll_qty": str(yesterday_sell_qty),
-                "thdt_buyqty": str(today_buy_qty),
-                "thdt_sll_qty": str(today_sell_qty),
-                "hldg_qty": str(holding_qty),
-                "ord_psbl_qty": str(holding_qty),
-                "pchs_avg_pric": f"{avg_price:.2f}",
-                "pchs_amt": str(actual_investment),
-                "prpr": str(current_price),
-                "evlu_amt": str(current_value),
-                "evlu_pfls_amt": str(profit_loss),
-                "evlu_pfls_rt": f"{profit_loss_rate:.2f}",
-                "evlu_erng_rt": "0",
-                "loan_dt": "",
-                "loan_amt": "0",
-                "stln_slng_chgs": "0",
-                "expd_dt": "",
-                "fltt_rt": f"{change_rate:.2f}",
-                "bfdy_cprs_icdc": str(price_change),
-                "item_mgna_rt_name": "40%",
-                "grta_rt_name": "40%",
-                "sbst_pric": str(current_price),
-                "stck_loan_unpr": "0",
-                "pchs_dt": last_purchase_date,  # 최근 매입일자
-                "frst_pchs_dt": first_purchase_date  # 최초 매입일자
-            }
-            
-            output1_data.append(stock_data)
-            total_portfolio_value += current_value
-            total_purchase_amount += actual_investment
-            total_profit_loss += profit_loss
-            all_transactions.extend(transactions)
+        for result in results:
+            output1_data.append(result["stock_data"])
+            total_portfolio_value += result["current_value"]
+            total_purchase_amount += result["actual_investment"]
+            total_profit_loss += result["profit_loss"]
+            all_transactions.extend(result["transactions"])
         
         # 거래내역을 시간순으로 정렬
         all_transactions.sort(key=lambda x: (x["거래일자"], x["거래시간"]))
@@ -752,6 +818,10 @@ def generate_persona_portfolios():
         }
         
         all_portfolios[persona_name] = portfolio
+
+    # 캐시 저장
+    print("\n💾 주가 캐시 저장 중...")
+    save_price_cache()
 
     return all_portfolios
 
@@ -859,333 +929,178 @@ def create_master_tables(portfolios, folder="persona_tables"):
     print("   📈 전체 거래내역: all_transactions.json (생성 안함)")
 
 
-def convert_investor_data_to_korean(investor_data):
-    """
-    투자자 정보의 영어 필드명을 한글명으로 변환하는 함수
-    """
-    if not investor_data or 'output' not in investor_data:
-        return investor_data
-    
-    # 투자자 정보 필드 매핑
-    field_mapping = {
-        "stck_bsop_date": "주식영업일자",
-        "stck_clpr": "주식종가",
-        "prdy_vrss": "전일대비",
-        "prdy_vrss_sign": "전일대비부호",
-        "prsn_ntby_qty": "개인순매수수량",
-        "frgn_ntby_qty": "외국인순매수수량",
-        "orgn_ntby_qty": "기관순매수수량",
-        "prsn_ntby_tr_pbmn": "개인순매수거래대금",
-        "frgn_ntby_tr_pbmn": "외국인순매수거래대금",
-        "orgn_ntby_tr_pbmn": "기관순매수거래대금",
-        "prsn_shnu_vol": "개인매수거래량",
-        "frgn_shnu_vol": "외국인매수거래량",
-        "orgn_shnu_vol": "기관매수거래량",
-        "prsn_shnu_tr_pbmn": "개인매수거래대금",
-        "frgn_shnu_tr_pbmn": "외국인매수거래대금",
-        "orgn_shnu_tr_pbmn": "기관매수거래대금",
-        "prsn_seln_vol": "개인매도거래량",
-        "frgn_seln_vol": "외국인매도거래량",
-        "orgn_seln_vol": "기관매도거래량",
-        "prsn_seln_tr_pbmn": "개인매도거래대금",
-        "frgn_seln_tr_pbmn": "외국인매도거래대금",
-        "orgn_seln_tr_pbmn": "기관매도거래대금"
-    }
-    
-    converted_data = investor_data.copy()
-    converted_data['output'] = []
-    
-    for item in investor_data['output']:
-        converted_item = {}
-        for eng_key, kor_key in field_mapping.items():
-            if eng_key in item:
-                converted_item[kor_key] = item[eng_key]
-        converted_data['output'].append(converted_item)
-    
-    return converted_data
+# def convert_investor_data_to_korean(investor_data):
+#     """
+#     투자자 정보의 영어 필드명을 한글명으로 변환하는 함수 (주석처리)
+#     """
+#     if not investor_data or 'output' not in investor_data:
+#         return investor_data
+#     
+#     # 투자자 정보 필드 매핑
+#     field_mapping = {
+#         "stck_bsop_date": "주식영업일자",
+#         "stck_clpr": "주식종가",
+#         "prdy_vrss": "전일대비",
+#         "prdy_vrss_sign": "전일대비부호",
+#         "prsn_ntby_qty": "개인순매수수량",
+#         "frgn_ntby_qty": "외국인순매수수량",
+#         "orgn_ntby_qty": "기관순매수수량",
+#         "prsn_ntby_tr_pbmn": "개인순매수거래대금",
+#         "frgn_ntby_tr_pbmn": "외국인순매수거래대금",
+#         "orgn_ntby_tr_pbmn": "기관순매수거래대금",
+#         "prsn_shnu_vol": "개인매수거래량",
+#         "frgn_shnu_vol": "외국인매수거래량",
+#         "orgn_shnu_vol": "기관매수거래량",
+#         "prsn_shnu_tr_pbmn": "개인매수거래대금",
+#         "frgn_shnu_tr_pbmn": "외국인매수거래대금",
+#         "orgn_shnu_tr_pbmn": "기관매수거래대금",
+#         "prsn_seln_vol": "개인매도거래량",
+#         "frgn_seln_vol": "외국인매도거래량",
+#         "orgn_seln_vol": "기관매도거래량",
+#         "prsn_seln_tr_pbmn": "개인매도거래대금",
+#         "frgn_seln_tr_pbmn": "외국인매도거래대금",
+#         "orgn_seln_tr_pbmn": "기관매도거래대금"
+#     }
+#     
+#     converted_data = investor_data.copy()
+#     converted_data['output'] = []
+#     
+#     for item in investor_data['output']:
+#         converted_item = {}
+#         for eng_key, kor_key in field_mapping.items():
+#             if eng_key in item:
+#                 converted_item[kor_key] = item[eng_key]
+#         converted_data['output'].append(converted_item)
+#     
+#     return converted_data
 
 
-def calculate_investor_ratios(investor_data):
-    """
-    투자자 정보에 비율값을 계산하여 추가하는 함수
-    """
-    if not investor_data or 'output' not in investor_data:
-        return investor_data
-    
-    for item in investor_data['output']:
-        # 순매수 수량 비율 계산
-        total_net_qty = (abs(int(item.get('prsn_ntby_qty', 0))) + 
-                         abs(int(item.get('frgn_ntby_qty', 0))) + 
-                         abs(int(item.get('orgn_ntby_qty', 0))))
-        if total_net_qty > 0:
-            item['prsn_ntby_qty_ratio'] = round(
-                (abs(int(item.get('prsn_ntby_qty', 0))) / total_net_qty) * 100,
-                10)
-            item['frgn_ntby_qty_ratio'] = round(
-                (abs(int(item.get('frgn_ntby_qty', 0))) / total_net_qty) * 100,
-                10)
-            item['orgn_ntby_qty_ratio'] = round(
-                (abs(int(item.get('orgn_ntby_qty', 0))) / total_net_qty) * 100,
-                10)
-        else:
-            item['prsn_ntby_qty_ratio'] = 0
-            item['frgn_ntby_qty_ratio'] = 0
-            item['orgn_ntby_qty_ratio'] = 0
-        
-        # 순매수 거래대금 비율 계산
-        total_net_amount = (abs(int(item.get('prsn_ntby_tr_pbmn', 0))) + 
-                            abs(int(item.get('frgn_ntby_tr_pbmn', 0))) + 
-                            abs(int(item.get('orgn_ntby_tr_pbmn', 0))))
-        if total_net_amount > 0:
-            item['prsn_ntby_tr_pbmn_ratio'] = round(
-                (abs(int(item.get('prsn_ntby_tr_pbmn', 0))) / 
-                 total_net_amount) * 100, 10)
-            item['frgn_ntby_tr_pbmn_ratio'] = round(
-                (abs(int(item.get('frgn_ntby_tr_pbmn', 0))) / 
-                 total_net_amount) * 100, 10)
-            item['orgn_ntby_tr_pbmn_ratio'] = round(
-                (abs(int(item.get('orgn_ntby_tr_pbmn', 0))) / 
-                 total_net_amount) * 100, 10)
-        else:
-            item['prsn_ntby_tr_pbmn_ratio'] = 0
-            item['frgn_ntby_tr_pbmn_ratio'] = 0
-            item['orgn_ntby_tr_pbmn_ratio'] = 0
-        
-        # 매수 거래량 비율 계산
-        total_buy_vol = (int(item.get('prsn_shnu_vol', 0)) + 
-                         int(item.get('frgn_shnu_vol', 0)) + 
-                         int(item.get('orgn_shnu_vol', 0)))
-        if total_buy_vol > 0:
-            item['prsn_shnu_vol_ratio'] = round(
-                (int(item.get('prsn_shnu_vol', 0)) / total_buy_vol) * 100, 10)
-            item['frgn_shnu_vol_ratio'] = round(
-                (int(item.get('frgn_shnu_vol', 0)) / total_buy_vol) * 100, 10)
-            item['orgn_shnu_vol_ratio'] = round(
-                (int(item.get('orgn_shnu_vol', 0)) / total_buy_vol) * 100, 10)
-        else:
-            item['prsn_shnu_vol_ratio'] = 0
-            item['frgn_shnu_vol_ratio'] = 0
-            item['orgn_shnu_vol_ratio'] = 0
-        
-        # 매수 거래대금 비율 계산
-        total_buy_amount = (int(item.get('prsn_shnu_tr_pbmn', 0)) + 
-                            int(item.get('frgn_shnu_tr_pbmn', 0)) + 
-                            int(item.get('orgn_shnu_tr_pbmn', 0)))
-        if total_buy_amount > 0:
-            item['prsn_shnu_tr_pbmn_ratio'] = round(
-                (int(item.get('prsn_shnu_tr_pbmn', 0)) / 
-                 total_buy_amount) * 100, 10)
-            item['frgn_shnu_tr_pbmn_ratio'] = round(
-                (int(item.get('frgn_shnu_tr_pbmn', 0)) / 
-                 total_buy_amount) * 100, 10)
-            item['orgn_shnu_tr_pbmn_ratio'] = round(
-                (int(item.get('orgn_shnu_tr_pbmn', 0)) / 
-                 total_buy_amount) * 100, 10)
-        else:
-            item['prsn_shnu_tr_pbmn_ratio'] = 0
-            item['frgn_shnu_tr_pbmn_ratio'] = 0
-            item['orgn_shnu_tr_pbmn_ratio'] = 0
-        
-        # 매도 거래량 비율 계산
-        total_sell_vol = (int(item.get('prsn_seln_vol', 0)) + 
-                          int(item.get('frgn_seln_vol', 0)) + 
-                          int(item.get('orgn_seln_vol', 0)))
-        if total_sell_vol > 0:
-            item['prsn_seln_vol_ratio'] = round(
-                (int(item.get('prsn_seln_vol', 0)) / total_sell_vol) * 100, 10)
-            item['frgn_seln_vol_ratio'] = round(
-                (int(item.get('frgn_seln_vol', 0)) / total_sell_vol) * 100, 10)
-            item['orgn_seln_vol_ratio'] = round(
-                (int(item.get('orgn_seln_vol', 0)) / total_sell_vol) * 100, 10)
-        else:
-            item['prsn_seln_vol_ratio'] = 0
-            item['frgn_seln_vol_ratio'] = 0
-            item['orgn_seln_vol_ratio'] = 0
-        
-        # 매도 거래대금 비율 계산
-        total_sell_amount = (int(item.get('prsn_seln_tr_pbmn', 0)) + 
-                             int(item.get('frgn_seln_tr_pbmn', 0)) + 
-                             int(item.get('orgn_seln_tr_pbmn', 0)))
-        if total_sell_amount > 0:
-            item['prsn_seln_tr_pbmn_ratio'] = round(
-                (int(item.get('prsn_seln_tr_pbmn', 0)) / 
-                 total_sell_amount) * 100, 10)
-            item['frgn_seln_tr_pbmn_ratio'] = round(
-                (int(item.get('frgn_seln_tr_pbmn', 0)) / 
-                 total_sell_amount) * 100, 10)
-            item['orgn_seln_tr_pbmn_ratio'] = round(
-                (int(item.get('orgn_seln_tr_pbmn', 0)) / 
-                 total_sell_amount) * 100, 10)
-        else:
-            item['prsn_seln_tr_pbmn_ratio'] = 0
-            item['frgn_seln_tr_pbmn_ratio'] = 0
-            item['orgn_seln_tr_pbmn_ratio'] = 0
-    
-    return investor_data
+# def calculate_investor_ratios(investor_data):
+#     """
+#     투자자 정보에 비율값을 계산하여 추가하는 함수 (주석처리)
+#     """
+#     if not investor_data or 'output' not in investor_data:
+#         return investor_data
+#     
+#     for item in investor_data['output']:
+#         # 순매수 수량 비율 계산
+#         total_net_qty = (abs(int(item.get('prsn_ntby_qty', 0))) + 
+#                          abs(int(item.get('frgn_ntby_qty', 0))) + 
+#                          abs(int(item.get('orgn_ntby_qty', 0))))
+#         if total_net_qty > 0:
+#             item['prsn_ntby_qty_ratio'] = round(
+#                 (abs(int(item.get('prsn_ntby_qty', 0))) / total_net_qty) * 100,
+#                 10)
+#             item['frgn_ntby_qty_ratio'] = round(
+#                 (abs(int(item.get('frgn_ntby_qty', 0))) / total_net_qty) * 100,
+#                 10)
+#             item['orgn_ntby_qty_ratio'] = round(
+#                 (abs(int(item.get('orgn_ntby_qty', 0))) / total_net_qty) * 100,
+#                 10)
+#         else:
+#             item['prsn_ntby_qty_ratio'] = 0
+#             item['frgn_ntby_qty_ratio'] = 0
+#             item['orgn_ntby_qty_ratio'] = 0
+#         
+#         # 순매수 거래대금 비율 계산
+#         total_net_amount = (abs(int(item.get('prsn_ntby_tr_pbmn', 0))) + 
+#                             abs(int(item.get('frgn_ntby_tr_pbmn', 0))) + 
+#                             abs(int(item.get('orgn_ntby_tr_pbmn', 0))))
+#         if total_net_amount > 0:
+#             item['prsn_ntby_tr_pbmn_ratio'] = round(
+#                 (abs(int(item.get('prsn_ntby_tr_pbmn', 0))) / 
+#                  total_net_amount) * 100, 10)
+#             item['frgn_ntby_tr_pbmn_ratio'] = round(
+#                 (abs(int(item.get('frgn_ntby_tr_pbmn', 0))) / 
+#                  total_net_amount) * 100, 10)
+#             item['orgn_ntby_tr_pbmn_ratio'] = round(
+#                 (abs(int(item.get('orgn_ntby_tr_pbmn', 0))) / 
+#                  total_net_amount) * 100, 10)
+#         else:
+#             item['prsn_ntby_tr_pbmn_ratio'] = 0
+#             item['frgn_ntby_tr_pbmn_ratio'] = 0
+#             item['orgn_ntby_tr_pbmn_ratio'] = 0
+#         
+#         # 매수 거래량 비율 계산
+#         total_buy_vol = (int(item.get('prsn_shnu_vol', 0)) + 
+#                          int(item.get('frgn_shnu_vol', 0)) + 
+#                          int(item.get('orgn_shnu_vol', 0)))
+#         if total_buy_vol > 0:
+#             item['prsn_shnu_vol_ratio'] = round(
+#                 (int(item.get('prsn_shnu_vol', 0)) / total_buy_vol) * 100, 10)
+#             item['frgn_shnu_vol_ratio'] = round(
+#                 (int(item.get('frgn_shnu_vol', 0)) / total_buy_vol) * 100, 10)
+#             item['orgn_shnu_vol_ratio'] = round(
+#                 (int(item.get('orgn_shnu_vol', 0)) / total_buy_vol) * 100, 10)
+#         else:
+#             item['prsn_shnu_vol_ratio'] = 0
+#             item['frgn_shnu_vol_ratio'] = 0
+#             item['orgn_shnu_vol_ratio'] = 0
+#         
+#         # 매수 거래대금 비율 계산
+#         total_buy_amount = (int(item.get('prsn_shnu_tr_pbmn', 0)) + 
+#                             int(item.get('frgn_shnu_tr_pbmn', 0)) + 
+#                             int(item.get('orgn_shnu_tr_pbmn', 0)))
+#         if total_buy_amount > 0:
+#             item['prsn_shnu_tr_pbmn_ratio'] = round(
+#                 (int(item.get('prsn_shnu_tr_pbmn', 0)) / 
+#                  total_buy_amount) * 100, 10)
+#             item['frgn_shnu_tr_pbmn_ratio'] = round(
+#                 (int(item.get('frgn_shnu_tr_pbmn', 0)) / 
+#                  total_buy_amount) * 100, 10)
+#             item['orgn_shnu_tr_pbmn_ratio'] = round(
+#                 (int(item.get('orgn_shnu_tr_pbmn', 0)) / 
+#                  total_buy_amount) * 100, 10)
+#         else:
+#             item['prsn_shnu_tr_pbmn_ratio'] = 0
+#             item['frgn_shnu_tr_pbmn_ratio'] = 0
+#             item['orgn_shnu_tr_pbmn_ratio'] = 0
+#         
+#         # 매도 거래량 비율 계산
+#         total_sell_vol = (int(item.get('prsn_seln_vol', 0)) + 
+#                           int(item.get('frgn_seln_vol', 0)) + 
+#                           int(item.get('orgn_seln_vol', 0)))
+#         if total_sell_vol > 0:
+#             item['prsn_seln_vol_ratio'] = round(
+#                 (int(item.get('prsn_seln_vol', 0)) / total_sell_vol) * 100, 10)
+#             item['frgn_seln_vol_ratio'] = round(
+#                 (int(item.get('frgn_seln_vol', 0)) / total_sell_vol) * 100, 10)
+#             item['orgn_seln_vol_ratio'] = round(
+#                 (int(item.get('orgn_seln_vol', 0)) / total_sell_vol) * 100, 10)
+#         else:
+#             item['prsn_seln_vol_ratio'] = 0
+#             item['frgn_seln_vol_ratio'] = 0
+#             item['orgn_seln_vol_ratio'] = 0
+#         
+#         # 매도 거래대금 비율 계산
+#         total_sell_amount = (int(item.get('prsn_seln_tr_pbmn', 0)) + 
+#                              int(item.get('frgn_seln_tr_pbmn', 0)) + 
+#                              int(item.get('orgn_seln_tr_pbmn', 0)))
+#         if total_sell_amount > 0:
+#             item['prsn_seln_tr_pbmn_ratio'] = round(
+#                 (int(item.get('prsn_seln_tr_pbmn', 0)) / 
+#                  total_sell_amount) * 100, 10)
+#             item['frgn_seln_tr_pbmn_ratio'] = round(
+#                 (int(item.get('frgn_seln_tr_pbmn', 0)) / 
+#                  total_sell_amount) * 100, 10)
+#             item['orgn_seln_tr_pbmn_ratio'] = round(
+#                 (int(item.get('orgn_seln_tr_pbmn', 0)) / 
+#                  total_sell_amount) * 100, 10)
+#         else:
+#             item['prsn_seln_tr_pbmn_ratio'] = 0
+#             item['frgn_seln_tr_pbmn_ratio'] = 0
+#             item['orgn_seln_tr_pbmn_ratio'] = 0
+#     
+#     return investor_data
 
 
-def collect_all_investor_info():
-    """
-    build_persona.py에서 사용되는 모든 종목의 투자자 정보를 수집하여 JSON으로 저장
-    """
-    print("🚀 모든 종목 투자자 정보 수집 시작...")
-    
-    # build_persona.py에서 사용되는 모든 종목코드
-    stock_codes = {
-        # KOSPI 종목
-        "005930": "삼성전자",
-        "373220": "LG에너지솔루션", 
-        "035420": "NAVER",
-        "035720": "카카오",
-        "017670": "SK텔레콤",
-        "033780": "KT&G",
-        "000660": "SK하이닉스",
-        "207940": "삼성바이오로직스",
-        "051910": "LG화학",
-        "066570": "LG전자",
-        "096770": "SK이노베이션",
-        "003550": "LG",
-        "015760": "한국전력",
-        
-        # KOSDAQ 종목
-        "112040": "위메이드",
-        "086520": "에코프로",
-        "196170": "알테오젠",
-        "028300": "HLB",
-        "293490": "카카오게임즈",
-        "263750": "펄어비스",
-        "096530": "씨젠",
-        "086900": "메디톡스"
-    }
-    
-    try:
-        # 1. 액세스 토큰 발급
-        print("🔑 액세스 토큰 발급 중...")
-        token = get_access_token()
-        
-        # 2. 각 종목별 투자자 정보 수집
-        all_investor_data = {}
-        
-        for i, (code, name) in enumerate(stock_codes.items()):
-            print(f"\n📊 {name}({code}) 투자자 정보 수집 중... "
-                  f"({i+1}/{len(stock_codes)})")
-            
-            try:
-                # 투자자 정보 조회
-                investor_data = get_investor_info(code, token)
-                
-                if investor_data and investor_data.get('output'):
-                    # 성공적으로 데이터를 받은 경우 - 한글명으로 변환
-                    korean_investor_data = convert_investor_data_to_korean(investor_data)
-                    all_investor_data[code] = {
-                        "종목코드": code,
-                        "종목명": name,
-                        "투자자정보": korean_investor_data,
-                        "수집시간": datetime.now().isoformat(),
-                        "상태": "성공"
-                    }
-                    print(f"✅ {name} 투자자 정보 수집 완료 (한글명 변환)")
-                else:
-                    # API 응답은 성공했지만 데이터가 없는 경우
-                    all_investor_data[code] = {
-                        "종목코드": code,
-                        "종목명": name,
-                        "투자자정보": investor_data,
-                        "수집시간": datetime.now().isoformat(),
-                        "상태": "데이터없음",
-                        "오류메시지": (investor_data.get('msg1', '알 수 없는 오류') 
-                                     if investor_data else '응답 데이터 없음')
-                    }
-                    print(f"⚠️  {name} 투자자 정보 없음")
-                
-            except Exception as e:
-                # API 호출 실패한 경우
-                all_investor_data[code] = {
-                    "종목코드": code,
-                    "종목명": name,
-                    "투자자정보": None,
-                    "수집시간": datetime.now().isoformat(),
-                    "상태": "실패",
-                    "오류메시지": str(e)
-                }
-                print(f"❌ {name} 투자자 정보 수집 실패: {e}")
-            
-            # API 호출 간격 조절 (분당 1회 제한 고려)
-            if i < len(stock_codes) - 1:
-                print(f"⏳ API 호출 간격 대기 중... ({i+1}/{len(stock_codes)})")
-                time.sleep(2)  # 2초 대기
-        
-        # 3. JSON 파일로 저장 (주석처리)
-        # output_folder = "data"
-        # if not os.path.exists(output_folder):
-        #     os.makedirs(output_folder)
-        
-        # 전체 데이터 저장 (주석처리)
-        # all_data_filename = f"{output_folder}/all_investor_info.json"
-        # with open(all_data_filename, 'w', encoding='utf-8') as f:
-        #     json.dump(all_investor_data, f, ensure_ascii=False, indent=2)
-        
-        # 성공한 데이터만 별도 저장 (주석처리)
-        # successful_data = {
-        #     code: data for code, data in all_investor_data.items() 
-        #     if data["상태"] == "성공"
-        # }
-        # successful_filename = f"{output_folder}/successful_investor_info.json"
-        # with open(successful_filename, 'w', encoding='utf-8') as f:
-        #     json.dump(successful_data, f, ensure_ascii=False, indent=2)
-        
-        # 요약 정보 저장 (주석처리)
-        # summary = {
-        #     "수집시간": datetime.now().isoformat(),
-        #     "총종목수": len(stock_codes),
-        #     "성공수": len(successful_data),
-        #     "실패수": len(all_investor_data) - len(successful_data),
-        #     "성공률": f"{(len(successful_data) / len(stock_codes) * 100):.1f}%",
-        #     "종목별상태": {
-        #         code: data["상태"] for code, data in all_investor_data.items()
-        #     }
-        # }
-        # summary_filename = f"{output_folder}/investor_info_summary.json"
-        # with open(summary_filename, 'w', encoding='utf-8') as f:
-        #     json.dump(summary, f, ensure_ascii=False, indent=2)
-        
-        print("\n📁 투자자 정보 저장 완료: (주석처리됨)")
-        print("   📊 전체 데이터: all_investor_info.json (생성 안함)")
-        # print(f"   ✅ 성공 데이터: {successful_filename}")
-        # print(f"   📋 요약 정보: {summary_filename}")
-        
-        # 결과 요약 출력
-        print("\n=== 📈 투자자 정보 수집 결과 ===")
-        print(f"총 종목 수: {len(stock_codes)}개")
-        # print(f"성공: {len(successful_data)}개")
-        # print(f"실패: {len(all_investor_data) - len(successful_data)}개")
-        # print(f"성공률: {(len(successful_data) / len(stock_codes) * 100):.1f}%")
-        
-        # 성공/실패 통계 계산
-        successful_count = len([data for data in all_investor_data.values() if data["상태"] == "성공"])
-        failed_count = len(all_investor_data) - successful_count
-        success_rate = (successful_count / len(stock_codes) * 100) if len(stock_codes) > 0 else 0
-        
-        print(f"성공: {successful_count}개")
-        print(f"실패: {failed_count}개")
-        print(f"성공률: {success_rate:.1f}%")
-        
-        # 실패한 종목들 출력
-        failed_stocks = [
-            f"{data['종목명']}({code})" 
-            for code, data in all_investor_data.items() 
-            if data["상태"] != "성공"
-        ]
-        if failed_stocks:
-            print("\n❌ 실패한 종목들:")
-            for stock in failed_stocks:
-                print(f"   - {stock}")
-        
-        return all_investor_data
-        
-    except Exception as e:
-        print(f"❌ 투자자 정보 수집 중 오류 발생: {e}")
-        return None
+# def collect_all_investor_info():
+#     """
+#     build_persona.py에서 사용되는 모든 종목의 투자자 정보를 수집 (주석처리)
+#     """
+#     print("🚀 모든 종목 투자자 정보 수집 시작... (주석처리됨)")
+#     print("✅ 투자자 정보 수집 생략")
+#     return None
 
 
 if __name__ == "__main__":
@@ -1206,15 +1121,17 @@ if __name__ == "__main__":
         # 통합 JSON 생성
         create_master_tables(portfolios)
         
-        # 2단계: 투자자 정보 수집
-        print("\n=== 2단계: 투자자 정보 수집 ===")
-        collect_all_investor_info()
+        # 2단계: 투자자 정보 수집 (주석처리)
+        # print("\n=== 2단계: 투자자 정보 수집 ===")
+        # collect_all_investor_info()
+        print("\n=== 2단계: 투자자 정보 수집 (생략) ===")
+        print("✅ 투자자 정보 수집 단계를 생략합니다.")
         
         print("\n✨ 모든 작업 완료!")
         print("📂 생성된 파일:")
         print("   📁 persona_json/ - 페르소나별 개별 파일")
-        print("   📁 persona_tables/ - 통합 테이블")
-        print("   📁 data/ - 투자자 정보")
+        print("   📁 persona_tables/ - 통합 테이블 (생략됨)")
+        print("   📁 data/ - 투자자 정보 (생략됨)")
         
         # 생성된 데이터 요약
         print("\n=== 📈 국내주식 포트폴리오 요약 ===")

@@ -348,7 +348,8 @@ def calculate_investor_ratios(investor_data):
     return ratio_data
 
 
-def save_to_json(data, filename, directory="data", convert_korean=True):
+def save_to_json(data, filename, directory="data", convert_korean=True, 
+                 stock_code=None, stock_name=None):
     """
     데이터를 JSON 파일로 저장하는 함수입니다.
     
@@ -357,6 +358,8 @@ def save_to_json(data, filename, directory="data", convert_korean=True):
         filename (str): 파일명
         directory (str): 저장할 디렉토리
         convert_korean (bool): 한글명으로 변환 여부
+        stock_code (str): 종목코드
+        stock_name (str): 종목명
     """
     # 디렉토리가 없으면 생성
     if not os.path.exists(directory):
@@ -367,10 +370,24 @@ def save_to_json(data, filename, directory="data", convert_korean=True):
     if convert_korean:
         data = convert_to_korean_keys(data)
     
+    # 종목 정보 추가
+    if stock_code and stock_name:
+        if isinstance(data, dict):
+            # 종목 정보를 최상위에 추가
+            data_with_stock_info = {
+                "종목코드": stock_code,
+                "종목명": stock_name,
+                **data
+            }
+        else:
+            data_with_stock_info = data
+    else:
+        data_with_stock_info = data
+    
     filepath = os.path.join(directory, filename)
     
     with open(filepath, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+        json.dump(data_with_stock_info, f, ensure_ascii=False, indent=2)
     
     print(f"JSON 파일 저장 완료: {filepath}")
     return filepath
@@ -444,7 +461,8 @@ if __name__ == "__main__":
             daily_data = get_daily_price(stock_code, token)
             daily_filename = (f"{stock_code}_{stock_name}_"
                              f"일자별_{current_date}.json")
-            save_to_json(daily_data, daily_filename, directory="data/daily")
+            save_to_json(daily_data, daily_filename, directory="data/daily", 
+                         stock_code=stock_code, stock_name=stock_name)
             
             # 투자자 정보 조회 및 비율 계산
             time.sleep(0.2)  # API 호출 간격
@@ -459,7 +477,9 @@ if __name__ == "__main__":
                     investor_filename = (f"{stock_code}_{stock_name}_"
                                         f"투자자_{current_date}.json")
                     save_to_json(ratio_data, investor_filename, 
-                                directory="data/investor", convert_korean=False)
+                                directory="data/investor", 
+                                convert_korean=False, 
+                                stock_code=stock_code, stock_name=stock_name)
             
         else:
             # 복수 종목 조회 - 각 종목별 개별 파일 저장
@@ -471,7 +491,8 @@ if __name__ == "__main__":
                     stock_name = DEFAULT_STOCK_CODES.get(stock_code, "알수없음")
                     filename = (f"{stock_code}_{stock_name}_일자별_"
                                 f"{current_date}.json")
-                    save_to_json(stock_data, filename, directory="data/daily")
+                    save_to_json(stock_data, filename, directory="data/daily", 
+                                stock_code=stock_code, stock_name=stock_name)
                 else:
                     print(f"종목 {stock_code} 일자별 정보 저장 실패: "
                           f"{stock_data.get('error')}")
@@ -498,7 +519,9 @@ if __name__ == "__main__":
                                                f"투자자_{current_date}.json")
                             save_to_json(ratio_data, investor_filename, 
                                         directory="data/investor", 
-                                        convert_korean=False)
+                                        convert_korean=False, 
+                                        stock_code=stock_code, 
+                                        stock_name=stock_name)
                     else:
                         print(f"종목 {stock_code} 투자자 정보 조회 실패")
                     
