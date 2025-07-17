@@ -5,14 +5,92 @@ import os
 import FinanceDataReader as fdr
 import time
 import sys
+from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
 
 # kis_api 모듈 import를 위한 경로 추가
 sys.path.append('../kis_api')
 from kis_api import get_access_token, get_investor_info
 
+# 글로벌 캐시 딕셔너리
+price_cache = {}
+local_price_db_file = "data/price_cache.json"
 
-def get_historical_price(stock_code, date_str):
-    """특정 날짜의 주식 가격 조회"""
+
+def load_price_cache():
+    """로컬 파일에서 주가 캐시 로드"""
+    global price_cache
+    try:
+        if os.path.exists(local_price_db_file):
+            with open(local_price_db_file, 'r', encoding='utf-8') as f:
+                price_cache = json.load(f)
+            print(f"📁 주가 캐시 로드: {len(price_cache)}개 항목")
+        else:
+            price_cache = {}
+            print("📁 새로운 주가 캐시 생성")
+    except Exception as e:
+        print(f"❌ 주가 캐시 로드 실패: {e}")
+        price_cache = {}
+
+
+def save_price_cache():
+    """주가 캐시를 로컬 파일에 저장"""
+    try:
+        os.makedirs(os.path.dirname(local_price_db_file), exist_ok=True)
+        with open(local_price_db_file, 'w', encoding='utf-8') as f:
+            json.dump(price_cache, f, ensure_ascii=False, indent=2)
+        print(f"💾 주가 캐시 저장: {len(price_cache)}개 항목")
+    except Exception as e:
+        print(f"❌ 주가 캐시 저장 실패: {e}")
+
+
+def estimate_historical_price(stock_code, date_str, current_price):
+    """실제 API 호출 대신 추정값으로 과거 주가 계산"""
+    try:
+        # 날짜 차이 계산
+        target_date = datetime.strptime(date_str, '%Y%m%d')
+        current_date = datetime.now()
+        days_diff = (current_date - target_date).days
+        
+        # 과거일수록 더 큰 변동성 적용
+        if days_diff < 30:  # 1개월 미만
+            variation_range = 0.15  # ±15%
+        elif days_diff < 90:  # 3개월 미만
+            variation_range = 0.25  # ±25%
+        elif days_diff < 365:  # 1년 미만
+            variation_range = 0.35  # ±35%
+        else:  # 1년 이상
+            variation_range = 0.50  # ±50%
+        
+        # 랜덤 변동 적용
+        variation = random.uniform(-variation_range, variation_range)
+        estimated_price = int(current_price * (1 + variation))
+        
+        # 최소값 보장
+        estimated_price = max(estimated_price, 1000)
+        
+        return estimated_price
+    except Exception as e:
+        print(f"❌ 추정 주가 계산 실패: {e}")
+        return current_price
+
+
+def get_historical_price(stock_code, date_str, current_price=None, use_cache=True, use_estimation=True):
+    """특정 날짜의 주식 가격 조회 (캐싱 및 추정값 지원)"""
+    cache_key = f"{stock_code}_{date_str}"
+    
+    # 1. 캐시에서 확인
+    if use_cache and cache_key in price_cache:
+        return price_cache[cache_key]
+    
+    # 2. 추정값 사용 (빠른 처리)
+    if use_estimation and current_price:
+        estimated_price = estimate_historical_price(stock_code, date_str, current_price)
+        if use_cache:
+            price_cache[cache_key] = estimated_price
+        return estimated_price
+    
+    # 3. 실제 API 호출 (느린 처리)
     try:
         # 해당 날짜 전후 1주일 데이터 조회
         start_date = (datetime.strptime(date_str, '%Y%m%d') -
@@ -27,14 +105,25 @@ def get_historical_price(stock_code, date_str):
             target_date = (datetime.strptime(date_str, '%Y%m%d')
                            .strftime('%Y-%m-%d'))
             if target_date in stock_data.index:
-                return int(stock_data.loc[target_date]['Close'])
+                price = int(stock_data.loc[target_date]['Close'])
             else:
                 # 가장 가까운 날짜의 데이터 사용
-                return int(stock_data['Close'].iloc[-1])
+                price = int(stock_data['Close'].iloc[-1])
+            
+            # 캐시에 저장
+            if use_cache:
+                price_cache[cache_key] = price
+            return price
         else:
             return None
     except Exception as e:
         print(f"❌ {stock_code} {date_str} 가격 조회 실패: {e}")
+        # 실패시 추정값으로 대체
+        if current_price:
+            estimated_price = estimate_historical_price(stock_code, date_str, current_price)
+            if use_cache:
+                price_cache[cache_key] = estimated_price
+            return estimated_price
         return None
 
 
@@ -182,9 +271,14 @@ def generate_stock_transactions(stock_info, persona_name, target_holding_qty,
         random_days = random.randint(0, days_diff)
         transaction_date = start_date + timedelta(days=random_days)
         transaction_date_str = transaction_date.strftime('%Y%m%d')
-        # 해당 날짜의 실제 주가 조회
-        historical_price = get_historical_price(stock_info["pdno"],
-                                                transaction_date_str)
+        # 해당 날짜의 주가 조회 (캐싱 및 추정값 사용)
+        historical_price = get_historical_price(
+            stock_info["pdno"], 
+            transaction_date_str, 
+            current_price=current_price, 
+            use_cache=True, 
+            use_estimation=True
+        )
         if historical_price is None:
             price_variation = random.uniform(0.8, 1.2)
             historical_price = int(current_price * price_variation)
@@ -710,55 +804,105 @@ def save_persona_json(persona_name, portfolio_data, folder="persona_json"):
 
 
 def create_master_tables(portfolios, folder="persona_tables"):
-    """전체 통합 테이블 생성 (한국어 버전과 거래내역만)"""
+    """전체 통합 테이블 생성 (한국어 버전과 거래내역만) - 주석처리됨"""
     if not os.path.exists(folder):
         os.makedirs(folder)
     
-    # 전체 포트폴리오 통합 JSON 저장 (한국어 버전만)
-    all_portfolios_korean = {}
-    all_transactions = {}
+    # 전체 포트폴리오 통합 JSON 저장 (한국어 버전만) - 주석처리
+    # all_portfolios_korean = {}
+    # all_transactions = {}
     
-    for persona_name, portfolio in portfolios.items():
-        # 한국어 버전 (모든 정보 포함)
-        all_portfolios_korean[persona_name] = {
-            "persona_name": portfolio["persona_name"],
-            "profile": portfolio["profile"],
-            "api_response": portfolio["korean_api_response"],
-            "transaction_history": portfolio["transaction_history"],
-            "transaction_summary": {
-                "총거래횟수": len(portfolio["transaction_history"]),
-                "총매수금액": sum(t["거래금액"] 
-                               for t in portfolio["transaction_history"]),
-                "총수수료": sum(t["수수료"] 
-                             for t in portfolio["transaction_history"]),
-                "거래기간": {
-                    "시작일": (min(t["거래일자"] 
-                                  for t in portfolio["transaction_history"]) 
-                              if portfolio["transaction_history"] else "N/A"),
-                    "종료일": (max(t["거래일자"] 
-                                  for t in portfolio["transaction_history"]) 
-                              if portfolio["transaction_history"] else "N/A")
-                }
-            },
-            "timestamp": portfolio["timestamp"]
-        }
+    # for persona_name, portfolio in portfolios.items():
+    #     # 한국어 버전 (모든 정보 포함)
+    #     all_portfolios_korean[persona_name] = {
+    #         "persona_name": portfolio["persona_name"],
+    #         "profile": portfolio["profile"],
+    #         "api_response": portfolio["korean_api_response"],
+    #         "transaction_history": portfolio["transaction_history"],
+    #         "transaction_summary": {
+    #             "총거래횟수": len(portfolio["transaction_history"]),
+    #             "총매수금액": sum(t["거래금액"] 
+    #                            for t in portfolio["transaction_history"]),
+    #             "총수수료": sum(t["수수료"] 
+    #                          for t in portfolio["transaction_history"]),
+    #             "거래기간": {
+    #                 "시작일": (min(t["거래일자"] 
+    #                               for t in portfolio["transaction_history"]) 
+    #                           if portfolio["transaction_history"] else "N/A"),
+    #                 "종료일": (max(t["거래일자"] 
+    #                               for t in portfolio["transaction_history"]) 
+    #                           if portfolio["transaction_history"] else "N/A")
+    #             }
+    #         },
+    #         "timestamp": portfolio["timestamp"]
+    #     }
         
-        # 거래내역 통합
-        all_transactions[persona_name] = portfolio["transaction_history"]
+    #     # 거래내역 통합
+    #     all_transactions[persona_name] = portfolio["transaction_history"]
     
-    # 한국어 버전 저장
-    korean_filename = f"{folder}/all_personas.json"
-    with open(korean_filename, 'w', encoding='utf-8') as f:
-        json.dump(all_portfolios_korean, f, ensure_ascii=False, indent=2)
+    # # 한국어 버전 저장 (주석처리)
+    # korean_filename = f"{folder}/all_personas.json"
+    # with open(korean_filename, 'w', encoding='utf-8') as f:
+    #     json.dump(all_portfolios_korean, f, ensure_ascii=False, indent=2)
     
-    # 전체 거래내역 통합 저장
-    transactions_filename = f"{folder}/all_transactions.json"
-    with open(transactions_filename, 'w', encoding='utf-8') as f:
-        json.dump(all_transactions, f, ensure_ascii=False, indent=2)
+    # # 전체 거래내역 통합 저장 (주석처리)
+    # transactions_filename = f"{folder}/all_transactions.json"
+    # with open(transactions_filename, 'w', encoding='utf-8') as f:
+    #     json.dump(all_transactions, f, ensure_ascii=False, indent=2)
     
-    print("\n📊 통합 JSON 저장:")
-    print(f"   🇰🇷 전체 페르소나: {korean_filename}")
-    print(f"   📈 전체 거래내역: {transactions_filename}")
+    # print("\n📊 통합 JSON 저장:")
+    # print(f"   🇰🇷 전체 페르소나: {korean_filename}")
+    # print(f"   📈 전체 거래내역: {transactions_filename}")
+    
+    print("\n📊 통합 JSON 저장: (주석처리됨)")
+    print("   🇰🇷 전체 페르소나: all_personas.json (생성 안함)")
+    print("   📈 전체 거래내역: all_transactions.json (생성 안함)")
+
+
+def convert_investor_data_to_korean(investor_data):
+    """
+    투자자 정보의 영어 필드명을 한글명으로 변환하는 함수
+    """
+    if not investor_data or 'output' not in investor_data:
+        return investor_data
+    
+    # 투자자 정보 필드 매핑
+    field_mapping = {
+        "stck_bsop_date": "주식영업일자",
+        "stck_clpr": "주식종가",
+        "prdy_vrss": "전일대비",
+        "prdy_vrss_sign": "전일대비부호",
+        "prsn_ntby_qty": "개인순매수수량",
+        "frgn_ntby_qty": "외국인순매수수량",
+        "orgn_ntby_qty": "기관순매수수량",
+        "prsn_ntby_tr_pbmn": "개인순매수거래대금",
+        "frgn_ntby_tr_pbmn": "외국인순매수거래대금",
+        "orgn_ntby_tr_pbmn": "기관순매수거래대금",
+        "prsn_shnu_vol": "개인매수거래량",
+        "frgn_shnu_vol": "외국인매수거래량",
+        "orgn_shnu_vol": "기관매수거래량",
+        "prsn_shnu_tr_pbmn": "개인매수거래대금",
+        "frgn_shnu_tr_pbmn": "외국인매수거래대금",
+        "orgn_shnu_tr_pbmn": "기관매수거래대금",
+        "prsn_seln_vol": "개인매도거래량",
+        "frgn_seln_vol": "외국인매도거래량",
+        "orgn_seln_vol": "기관매도거래량",
+        "prsn_seln_tr_pbmn": "개인매도거래대금",
+        "frgn_seln_tr_pbmn": "외국인매도거래대금",
+        "orgn_seln_tr_pbmn": "기관매도거래대금"
+    }
+    
+    converted_data = investor_data.copy()
+    converted_data['output'] = []
+    
+    for item in investor_data['output']:
+        converted_item = {}
+        for eng_key, kor_key in field_mapping.items():
+            if eng_key in item:
+                converted_item[kor_key] = item[eng_key]
+        converted_data['output'].append(converted_item)
+    
+    return converted_data
 
 
 def calculate_investor_ratios(investor_data):
@@ -931,15 +1075,16 @@ def collect_all_investor_info():
                 investor_data = get_investor_info(code, token)
                 
                 if investor_data and investor_data.get('output'):
-                    # 성공적으로 데이터를 받은 경우
+                    # 성공적으로 데이터를 받은 경우 - 한글명으로 변환
+                    korean_investor_data = convert_investor_data_to_korean(investor_data)
                     all_investor_data[code] = {
                         "종목코드": code,
                         "종목명": name,
-                        "투자자정보": investor_data,
+                        "투자자정보": korean_investor_data,
                         "수집시간": datetime.now().isoformat(),
                         "상태": "성공"
                     }
-                    print(f"✅ {name} 투자자 정보 수집 완료")
+                    print(f"✅ {name} 투자자 정보 수집 완료 (한글명 변환)")
                 else:
                     # API 응답은 성공했지만 데이터가 없는 경우
                     all_investor_data[code] = {
@@ -970,51 +1115,60 @@ def collect_all_investor_info():
                 print(f"⏳ API 호출 간격 대기 중... ({i+1}/{len(stock_codes)})")
                 time.sleep(2)  # 2초 대기
         
-        # 3. JSON 파일로 저장
-        output_folder = "data"
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
+        # 3. JSON 파일로 저장 (주석처리)
+        # output_folder = "data"
+        # if not os.path.exists(output_folder):
+        #     os.makedirs(output_folder)
         
-        # 전체 데이터 저장
-        all_data_filename = f"{output_folder}/all_investor_info.json"
-        with open(all_data_filename, 'w', encoding='utf-8') as f:
-            json.dump(all_investor_data, f, ensure_ascii=False, indent=2)
+        # 전체 데이터 저장 (주석처리)
+        # all_data_filename = f"{output_folder}/all_investor_info.json"
+        # with open(all_data_filename, 'w', encoding='utf-8') as f:
+        #     json.dump(all_investor_data, f, ensure_ascii=False, indent=2)
         
-        # 성공한 데이터만 별도 저장
-        successful_data = {
-            code: data for code, data in all_investor_data.items() 
-            if data["상태"] == "성공"
-        }
-        successful_filename = f"{output_folder}/successful_investor_info.json"
-        with open(successful_filename, 'w', encoding='utf-8') as f:
-            json.dump(successful_data, f, ensure_ascii=False, indent=2)
+        # 성공한 데이터만 별도 저장 (주석처리)
+        # successful_data = {
+        #     code: data for code, data in all_investor_data.items() 
+        #     if data["상태"] == "성공"
+        # }
+        # successful_filename = f"{output_folder}/successful_investor_info.json"
+        # with open(successful_filename, 'w', encoding='utf-8') as f:
+        #     json.dump(successful_data, f, ensure_ascii=False, indent=2)
         
-        # 요약 정보 저장
-        summary = {
-            "수집시간": datetime.now().isoformat(),
-            "총종목수": len(stock_codes),
-            "성공수": len(successful_data),
-            "실패수": len(all_investor_data) - len(successful_data),
-            "성공률": f"{(len(successful_data) / len(stock_codes) * 100):.1f}%",
-            "종목별상태": {
-                code: data["상태"] for code, data in all_investor_data.items()
-            }
-        }
-        summary_filename = f"{output_folder}/investor_info_summary.json"
-        with open(summary_filename, 'w', encoding='utf-8') as f:
-            json.dump(summary, f, ensure_ascii=False, indent=2)
+        # 요약 정보 저장 (주석처리)
+        # summary = {
+        #     "수집시간": datetime.now().isoformat(),
+        #     "총종목수": len(stock_codes),
+        #     "성공수": len(successful_data),
+        #     "실패수": len(all_investor_data) - len(successful_data),
+        #     "성공률": f"{(len(successful_data) / len(stock_codes) * 100):.1f}%",
+        #     "종목별상태": {
+        #         code: data["상태"] for code, data in all_investor_data.items()
+        #     }
+        # }
+        # summary_filename = f"{output_folder}/investor_info_summary.json"
+        # with open(summary_filename, 'w', encoding='utf-8') as f:
+        #     json.dump(summary, f, ensure_ascii=False, indent=2)
         
-        print("\n📁 투자자 정보 저장 완료:")
-        print(f"   📊 전체 데이터: {all_data_filename}")
-        print(f"   ✅ 성공 데이터: {successful_filename}")
-        print(f"   📋 요약 정보: {summary_filename}")
+        print("\n📁 투자자 정보 저장 완료: (주석처리됨)")
+        print("   📊 전체 데이터: all_investor_info.json (생성 안함)")
+        # print(f"   ✅ 성공 데이터: {successful_filename}")
+        # print(f"   📋 요약 정보: {summary_filename}")
         
         # 결과 요약 출력
         print("\n=== 📈 투자자 정보 수집 결과 ===")
         print(f"총 종목 수: {len(stock_codes)}개")
-        print(f"성공: {len(successful_data)}개")
-        print(f"실패: {len(all_investor_data) - len(successful_data)}개")
-        print(f"성공률: {(len(successful_data) / len(stock_codes) * 100):.1f}%")
+        # print(f"성공: {len(successful_data)}개")
+        # print(f"실패: {len(all_investor_data) - len(successful_data)}개")
+        # print(f"성공률: {(len(successful_data) / len(stock_codes) * 100):.1f}%")
+        
+        # 성공/실패 통계 계산
+        successful_count = len([data for data in all_investor_data.values() if data["상태"] == "성공"])
+        failed_count = len(all_investor_data) - successful_count
+        success_rate = (successful_count / len(stock_codes) * 100) if len(stock_codes) > 0 else 0
+        
+        print(f"성공: {successful_count}개")
+        print(f"실패: {failed_count}개")
+        print(f"성공률: {success_rate:.1f}%")
         
         # 실패한 종목들 출력
         failed_stocks = [
