@@ -1,0 +1,395 @@
+{
+    "report_metadata": {
+      "title": "일일시황보고",
+      "date": "2025년 7월 3일 (목요일)",
+      "format": "daily_market_report",
+      "target_length": "short_form",
+      "language": "korean",
+      "market_status": "정규 거래 시간 (오전 9시~오후 3시 30분)",
+      "overall_market_trend": "코스피 3110선 회복 강세, 코스닥 780선 근접하며 상승 모멘텀 지속, 상법 개정안 통과 기대감과 미국-베트남 무역합의 영향으로 투자심리 개선"
+    },
+    "companies": [
+      {
+        "company_name": "삼성전자",
+        "stock_code": "005930",
+        "sector": "반도체/IT",
+        "current_price": {
+          "value": "63,300원",
+          "change": "전일대비 보합권, 6만원대 중반 박스권 거래 지속",
+          "change_percent": "0.00%",
+          "volume": "거래량 증가세, HBM 관련 이슈로 개인 투자자 관심 집중",
+          "trading_value": "일평균 거래대금 1조원대 유지"
+        },
+        "price_range": {
+          "day_high": "장중 고점 64,200원",
+          "day_low": "장중 저점 62,800원",
+          "week_52_high": "88,800원 (2025년 상반기 기록)",
+          "week_52_low": "49,900원 (2024년 하반기 저점)"
+        },
+        "market_cap": {
+          "value": "417.75조원",
+          "rank": "국내 시가총액 1위, 글로벌 반도체 기업 중 상위권"
+        },
+        "ownership": {
+          "foreign_ownership": "외국인 보유비중 52.3%, 최근 3개월간 순매수 전환",
+          "institution_ownership": "기관 보유비중 15.7%, 국민연금 등 장기투자기관 중심",
+          "individual_ownership": "개인 보유비중 32.0%, 동학개미운동 이후 증가세"
+        },
+        "financial_metrics": {
+          "per": "12.6배 (업종 평균 대비 적정 수준)",
+          "pbr": "1.55배 (장부가치 대비 저평가 구간)",
+          "roe": "15.0% (글로벌 우수 기업 수준의 자기자본이익률)",
+          "debt_ratio": "41.9% (안정적인 재무구조 유지)",
+          "current_ratio": "192.7% (유동성 양호)",
+          "dividend_yield": "2.26% (연간 배당수익률, 9.8조원 규모)",
+          "dividend_payout": "잉여현금흐름의 50% 환원 정책 유지",
+          "operating_margin": "10.9% (전년 2.5%에서 크게 개선)"
+        },
+        "recent_performance": {
+          "q1_2025_revenue": "79.14조원 (전분기 대비 4.4% 증가, 분기 사상 최대)",
+          "q1_2025_operating_profit": "6.7조원 (전분기 대비 3.0% 증가)",
+          "q1_2025_net_profit": "5.9조원 (안정적인 수익성 확보)",
+          "revenue_growth_yoy": "전년동기 대비 매출 증가율 지속",
+          "operating_profit_growth_yoy": "영업이익 개선세 지속, 메모리 업황 회복 기여",
+          "guidance": "2025년 7월 23일 2분기 실적 발표 예정, 하반기 HBM 매출 확대 전망"
+        },
+        "analyst_consensus": {
+          "target_price_avg": "78,000~82,000원 (주요 증권사 평균)",
+          "recommendation": "매수 (Buy) 의견 우세",
+          "analyst_count": "국내외 20여개 증권사 커버리지",
+          "upgrade_downgrade": "키움증권, 하나증권, KB증권 등이 목표가 상향 조정"
+        },
+        "key_points": [
+          "2025년 1분기 분기 최대 매출 79.14조원 달성, 영업이익 6.7조원으로 견조한 실적 지속",
+          "HBM3E 엔비디아 검증 결과 대기 상황에서 6월 주가 급등세 지속, AI 반도체 수혜 기대감 확산",
+          "갤럭시 AI 생태계 확장과 함께 DX부문(모바일) 수익성 개선, 프리미엄 전략 성과"
+        ],
+        "recent_news": {
+          "major_announcements": "7월 23일 2분기 실적 발표 예정, HBM 매출 비중 확대 전망",
+          "partnership_deals": "AMD와 HBM 관련 협력 강화, 엔비디아 HBM3E 검증 진행 중",
+          "product_launches": "갤럭시 S25 시리즈 판매 호조, AI 기능 탑재 확대",
+          "regulatory_updates": "미국 반도체법(CHIPS Act) 관련 투자 혜택 검토"
+        },
+        "technical_analysis": {
+          "support_level": "55,000원 (주요 이동평균선 지지)",
+          "resistance_level": "65,000원 (단기 저항선)",
+          "moving_average_20": "20일 이동평균 61,500원 상회 유지",
+          "moving_average_60": "60일 이동평균 58,000원 지지선 역할",
+          "rsi": "RSI 55 수준, 중립권에서 상승 여력 보유",
+          "macd": "MACD 상승 신호 지속, 골든크로스 형성",
+          "trend_direction": "단기 상승 추세, 중장기 횡보 구간 탈피 시도"
+        },
+        "investment_view": {
+          "valuation": "PER 12.6배, 배당수익률 2.26%로 글로벌 반도체 기업 대비 적정 밸류에이션 수준 유지",
+          "target_price": "증권사 평균 목표가 78,000~82,000원으로 현재가 대비 23~30% 상승여력 제시",
+          "strategy": "반도체 사이클 저점 구간으로 판단, 중장기 관점의 분할매수 전략 유효성 높음",
+          "rating": "매수(Buy) 등급 우세",
+          "price_catalyst": "HBM3E 엔비디아 검증 결과, 2분기 실적 발표, AI 반도체 수요 회복"
+        },
+        "risks": [
+          "지정학적 불확실성과 미중 무역갈등 심화에 따른 HBM 중국 수출 제약 리스크",
+          "파운드리 사업 수율 개선 과제, TSMC와의 기술격차 해소 필요성"
+        ],
+        "competitive_position": {
+          "market_share": "메모리 반도체 글로벌 1위 (DRAM 42%, NAND 30%)",
+          "global_ranking": "반도체 종합 매출 기준 세계 2위 (TSMC 다음)",
+          "key_competitors": "SK하이닉스(메모리), TSMC(파운드리), 인텔(시스템반도체)",
+          "competitive_advantage": "HBM 기술력, AI 반도체 수요 대응력, 수직계열화 경쟁력"
+        },
+        "esg_factors": {
+          "environmental": "2050년 탄소중립 달성 목표, RE100 이니셔티브 참여",
+          "social": "반도체 인재 양성, 지역사회 투자 확대",
+          "governance": "투명한 지배구조, 주주친화 경영 강화",
+          "esg_rating": "MSCI ESG 등급 A, 다우존스 지속가능경영지수 편입"
+        }
+      },
+      {
+        "company_name": "현대자동차",
+        "stock_code": "005380",
+        "sector": "자동차",
+        "current_price": {
+          "value": "213,000원",
+          "change": "전일대비 500원 하락 (-0.23%), 단기 조정 국면",
+          "change_percent": "-0.23%",
+          "volume": "273,065주 거래, 평상시 대비 거래량 감소",
+          "trading_value": "5,851억원 (일평균 거래대금 6,000억원 수준)"
+        },
+        "price_range": {
+          "day_high": "217,000원 (장초반 고점)",
+          "day_low": "211,500원 (오후 저점)",
+          "week_52_high": "245,000원 (2025년 상반기 최고가)",
+          "week_52_low": "195,000원 (2024년 말 저점)"
+        },
+        "market_cap": {
+          "value": "42조원 (국내 자동차 업계 1위)",
+          "rank": "코스피 시가총액 10위권, 글로벌 자동차 기업 중 상위권"
+        },
+        "ownership": {
+          "foreign_ownership": "외국인 보유비중 35.2%, 장기투자 성향",
+          "institution_ownership": "기관 보유비중 22.1%, 연기금 중심 보유",
+          "individual_ownership": "개인 보유비중 42.7%, 배당주 선호 투자자 다수"
+        },
+        "financial_metrics": {
+          "per": "9.8배 (글로벌 자동차 업계 평균 수준)",
+          "pbr": "0.85배 (장부가치 대비 저평가)",
+          "roe": "12.5% (자동차 업계 우수 수준)",
+          "debt_ratio": "68.5% (제조업 특성상 적정 수준)",
+          "current_ratio": "115.2% (유동성 안정)",
+          "dividend_yield": "5.9% (2024년 배당 12,000원 기준)",
+          "dividend_payout": "배당성향 25% 이상 유지 정책",
+          "operating_margin": "8.2% (글로벌 완성차 업체 중 상위권)"
+        },
+        "recent_performance": {
+          "q1_2025_revenue": "44조 4,078억원 (역대 1분기 최대 매출)",
+          "q1_2025_operating_profit": "3조 6,336억원 (전년동기 대비 2.1% 증가)",
+          "q1_2025_net_profit": "3조 3,822억원 (안정적인 수익성)",
+          "revenue_growth_yoy": "9.2% (전년동기 대비 매출 성장)",
+          "operating_profit_growth_yoy": "2.1% 증가, 환율 효과와 하이브리드 판매 증가 기여",
+          "guidance": "2025년 연간 417만대 판매 목표, 친환경차 비중 확대"
+        },
+        "analyst_consensus": {
+          "target_price_avg": "25만~35만원 (증권사별 편차 존재)",
+          "recommendation": "매수(Buy) 의견 다수",
+          "analyst_count": "국내외 15개 증권사 커버리지",
+          "upgrade_downgrade": "대신증권, 키움증권, 하나증권, 메리츠증권 등 목표가 상향"
+        },
+        "key_points": [
+          "2025년 1분기 역대 최대 분기 매출 44조원 기록, 북미 시장 호조와 환율 효과 기여",
+          "친환경차 21만대 판매로 전년동기 대비 38.4% 증가, 전기차 전환 가속화 성과",
+          "2030년 전기차 200만대 판매 목표, 미국 메타플랜트 본격 가동으로 현지 생산 확대"
+        ],
+        "recent_news": {
+          "major_announcements": "2025년 1분기 배당금 25% 증액하여 주당 2,500원 지급",
+          "partnership_deals": "SK온과 미국 전기차 배터리셀 합작공장 설립, 2025년부터 연간 30만대 물량 확보",
+          "product_launches": "디 올 뉴 팰리세이드, 디 올 뉴 넥쏘, 더 뉴 아이오닉 6 등 신차 출시",
+          "regulatory_updates": "미국 IRA(인플레이션 감축법) 혜택 확대, 현지 생산 전기차 세액공제"
+        },
+        "technical_analysis": {
+          "support_level": "200,000원 (심리적 지지선)",
+          "resistance_level": "220,000원 (단기 저항선)",
+          "moving_average_20": "20일 이동평균 215,000원 근처",
+          "moving_average_60": "60일 이동평균 208,000원 지지",
+          "rsi": "RSI 48 수준, 중립권 하단",
+          "macd": "MACD 횡보, 방향성 탐색 중",
+          "trend_direction": "200,000~220,000원 박스권 횡보 패턴"
+        },
+        "investment_view": {
+          "valuation": "시가총액 42조원으로 글로벌 3위 완성차 업체 지위 유지, PBR 0.85배 저평가 매력",
+          "shareholder_return": "2024년 배당 12,000원으로 역대 최대, 주주친화 정책 강화로 배당성향 25% 이상 유지",
+          "growth_driver": "하이브리드 라인업 7차종→14차종 확대, 전기차 전환과 미국 현지 생산으로 시장 대응력 강화",
+          "rating": "매수(Buy) 등급",
+          "price_catalyst": "2분기 실적 발표, 전기차 판매 증가, 미국 메타플랜트 본격 가동"
+        },
+        "risks": [
+          "글로벌 자동차 시장 경쟁 심화, 특히 중국 전기차 업체들의 공격적 진출",
+          "전기차 전환에 따른 초기 투자비용 부담, 배터리 원재료 가격 상승 리스크"
+        ],
+        "competitive_position": {
+          "market_share": "국내 자동차 시장 점유율 45%, 글로벌 시장 5% 수준",
+          "global_ranking": "글로벌 완성차 판매량 기준 3위 (토요타, 폴크스바겐 다음)",
+          "key_competitors": "토요타, 폴크스바겐, GM, 포드, 테슬라(전기차)",
+          "competitive_advantage": "하이브리드 기술력, 디자인 경쟁력, 품질 신뢰성"
+        },
+        "sales_data": {
+          "domestic_sales": "2025년 6월 62,064대 (전년동월 대비 3.8% 증가)",
+          "export_sales": "2025년 6월 296,827대 (전년동월 대비 1.0% 증가)",
+          "ev_sales": "2025년 1분기 전기차 64,091대 판매",
+          "hybrid_sales": "2025년 1분기 하이브리드 137,075대 판매",
+          "total_sales": "2025년 6월 글로벌 판매 358,891대"
+        },
+        "esg_factors": {
+          "environmental": "2030년 전기차 200만대 판매 목표, 탄소중립 2045 달성 계획",
+          "social": "전동화 전환 과정에서 협력사 상생, 지역사회 일자리 창출",
+          "governance": "투명한 의사결정 구조, 주주가치 제고 프로그램 운영",
+          "esg_rating": "MSCI ESG 등급 BBB, 지속가능경영 노력 지속"
+        }
+      },
+      {
+        "company_name": "HLB",
+        "stock_code": "028300",
+        "sector": "바이오",
+        "current_price": {
+          "value": "75,400원",
+          "change": "전일대비 보합권, FDA 승인 이슈로 높은 변동성 지속",
+          "change_percent": "0.00%",
+          "volume": "고변동성 구간으로 평상시 대비 거래량 증가",
+          "trading_value": "바이오 업종 내 높은 거래대금 비중"
+        },
+        "price_range": {
+          "day_high": "장중 고점 78,200원",
+          "day_low": "장중 저점 74,100원",
+          "week_52_high": "129,000원 (2025년 상반기 FDA 기대감 최고점)",
+          "week_52_low": "59,100원 (FDA 승인 불발 이후 저점)"
+        },
+        "market_cap": {
+          "value": "4.2조원 (코스닥 시가총액 상위 10위권)",
+          "rank": "코스닥 바이오 업종 대표 종목, 국내 신약개발 기업 중 최대 규모"
+        },
+        "ownership": {
+          "foreign_ownership": "외국인 보유비중 18.5%, FDA 승인 결과에 민감",
+          "institution_ownership": "기관 보유비중 25.3%, 장기 바이오 투자펀드 중심",
+          "individual_ownership": "개인 보유비중 56.2%, 테마주 성격으로 높은 개인 비중"
+        },
+        "financial_metrics": {
+          "per": "적자 기업으로 PER 산정 불가",
+          "pbr": "3.2배 (바이오 업종 특성상 높은 수준)",
+          "roe": "마이너스 (신약 개발 단계로 적자 지속)",
+          "debt_ratio": "45.2% (신약 개발 투자로 인한 부채 증가)",
+          "current_ratio": "180.5% (유동성 양호)",
+          "dividend_yield": "무배당 (수익 재투자 정책)",
+          "dividend_payout": "신약 개발에 현금 집중 투자",
+          "operating_margin": "마이너스 (연구개발비 집중 투자로 적자)"
+        },
+        "recent_performance": {
+          "q1_2025_revenue": "연결매출 450억원 (자회사 매출 포함)",
+          "q1_2025_operating_profit": "영업손실 280억원 (R&D 투자 지속)",
+          "q1_2025_net_profit": "당기순손실 320억원",
+          "revenue_growth_yoy": "전년동기 대비 매출 감소 (코로나 진단키트 매출 감소)",
+          "operating_profit_growth_yoy": "적자 지속, 신약 개발 투자 확대",
+          "guidance": "리보세라닙 FDA 재승인 추진 중, 승인 시 매출 급증 전망"
+        },
+        "analyst_consensus": {
+          "target_price_avg": "FDA 승인 시 30만원, 불발 시 5만원 (극명한 차이)",
+          "recommendation": "보유(Hold) 의견 우세, FDA 결과 대기",
+          "analyst_count": "국내 10개 증권사 커버리지",
+          "upgrade_downgrade": "FDA 승인 결과에 따라 목표가 대폭 변동 예상"
+        },
+        "key_points": [
+          "간암 치료제 리보세라닙의 FDA 재승인 추진으로 투자자 관심 집중, 성공 시 국내 바이오 업계 최초 쾌거",
+          "HLB생명과학과 흡수합병 결정으로 그룹 구조 재편, 시너지 효과와 경영 효율성 제고 기대",
+          "글로벌 제약사와 라이선스 아웃 파트너십 논의 진행, 기술이전 성사 시 대규모 마일스톤 수입"
+        ],
+        "recent_news": {
+          "major_announcements": "2025년 4월 HLB생명과학 흡수합병 결정, 합병비율 1:0.1168",
+          "partnership_deals": "글로벌 제약사와 리보세라닙 기술이전 협상, 구체적 진전 상황 주목",
+          "product_launches": "리보세라닙 외 다양한 항암제 후보물질 임상 진행",
+          "regulatory_updates": "FDA와 리보세라닙 재승인을 위한 지속적 커뮤니케이션"
+        },
+        "technical_analysis": {
+          "support_level": "70,000원 (심리적 지지선)",
+          "resistance_level": "85,000원 (단기 저항선)",
+          "moving_average_20": "20일 이동평균 77,000원",
+          "moving_average_60": "60일 이동평균 82,000원",
+          "rsi": "RSI 45 수준, 중립권 하단",
+          "macd": "MACD 하락 신호, 조정 압력 존재",
+          "trend_direction": "고변동성 구간, FDA 결과에 따른 급변 가능성"
+        },
+        "investment_view": {
+          "valuation": "FDA 승인 여부에 따른 고변동성 구간, 성공 시 대폭 상승 실패 시 급락 위험",
+          "target_price": "FDA 승인 시 30만원 목표가로 현재가 대비 300% 상승 잠재력",
+          "strategy": "FDA 승인 결과 발표 전까지 관망 또는 소량 분할매수, 위험 관리 필수",
+          "rating": "보유(Hold) 등급",
+          "price_catalyst": "FDA 승인 결과 발표, 글로벌 파트너십 체결, 임상시험 결과"
+        },
+        "risks": [
+          "FDA 승인 재불발 시 주가 대폭 하락 위험, 과거 승인 실패 경험으로 민감도 높음",
+          "바이오 업종 전반적인 부진, 글로벌 금리 상승으로 성장주 투자심리 위축"
+        ],
+        "competitive_position": {
+          "market_share": "국내 항암제 개발 분야 선도 기업",
+          "global_ranking": "글로벌 간암 치료제 시장 진출 시도",
+          "key_competitors": "셀트리온, 삼성바이오로직스, 유한양행",
+          "competitive_advantage": "Best-in-class 항암제 개발 역량, 간암 치료제 전문성"
+        },
+        "pipeline_status": {
+          "approved_products": "현재 승인된 자체 신약 없음",
+          "phase3_trials": "리보세라닙 (간암 치료제) FDA 재승인 추진",
+          "phase2_trials": "다양한 항암제 후보물질 임상 진행",
+          "phase1_trials": "면역항암제, 표적항암제 등 초기 임상",
+          "preclinical": "차세대 항암제 플랫폼 기술 개발",
+          "ind_submissions_2025": "신규 파이프라인 IND 신청 계획"
+        },
+        "market_data": {
+          "europe_market_share": "유럽 진출 계획 단계",
+          "us_market_share": "FDA 승인 후 미국 시장 진출 예정",
+          "asia_market_share": "아시아 시장 진출 검토",
+          "key_products": "리보세라닙 (HL012, 간암 치료제)",
+          "patent_expiry": "주요 특허 2030년대 만료 예정"
+        },
+        "esg_factors": {
+          "environmental": "친환경 제약 생산 프로세스 도입",
+          "social": "희귀질환, 난치성 질환 치료제 개발로 사회적 가치 창출",
+          "governance": "계열사 합병을 통한 투명한 지배구조 개선",
+          "esg_rating": "ESG 경영체계 구축 초기 단계"
+        }
+      }
+    ],
+    "market_environment": {
+      "kospi_index": "3,110.25 (전일대비 +55.83, +1.83%) 강세 마감, 상법 개정안 통과 기대감 반영",
+      "kosdaq_index": "779.85 (전일대비 +12.45, +1.62%) 상승, 개인 및 기관 순매수 우위",
+      "dollar_won_rate": "1,362.52원 (전일대비 -0.98원 하락), 달러 약세로 수출 기업 부담 완화",
+      "oil_price": "WTI 66.49달러 (전일대비 -0.51달러), 중동 지정학적 리스크 일시 완화",
+      "interest_rate": "한국은행 기준금리 3.50% 동결, 미국 연준 금리 인하 기대감 지속",
+      "vix_index": "VIX 지수 15.2로 안정권, 글로벌 투자심리 개선",
+      "sector_rotation": "반도체, 자동차, 바이오 업종으로 자금 유입, 성장주 선호 현상"
+    },
+    "global_factors": {
+      "us_market": "나스닥 22,832포인트, S&P500 6,270포인트로 사상 최고치 경신, 기술주 강세 지속",
+      "china_market": "상하이 종합지수 3,050선 회복, 중국 경기부양책 기대감",
+      "europe_market": "독일 DAX 23,934포인트 상승, 유럽 제조업 회복 신호",
+      "geopolitical_risk": "중동 지역 긴장 완화, 우크라이나 전쟁 교착상태 지속",
+      "trade_tensions": "미국-베트남 무역합의 타결로 아시아 경제 협력 확대 기대",
+      "regulatory_changes": "한국 상법 개정안 국회 통과로 기업지배구조 개선 및 주주가치 제고 기대"
+    },
+    "market_outlook": {
+      "title": "종합 전망 및 투자 전략",
+      "sector_summaries": [
+        {
+          "sector": "반도체(삼성전자)",
+          "outlook": "메모리 반도체 사이클 저점 통과, AI 반도체 수요 회복으로 하반기 실적 개선 기대",
+          "key_drivers": "HBM3E 엔비디아 검증 통과, AI 데이터센터 투자 확대, 중국 수출 제약 완화",
+          "headwinds": "지정학적 리스크 지속, 파운드리 경쟁 심화, 재고 조정 우려"
+        },
+        {
+          "sector": "자동차(현대차)",
+          "outlook": "전기차 전환 수혜와 미국 현지 생산 확대로 안정적 성장 기조 유지",
+          "key_drivers": "친환경차 판매 급증, IRA 혜택 확대, 배터리 합작 투자 효과",
+          "headwinds": "글로벌 완성차 경쟁 심화, 원자재 가격 상승, 중국 시장 경쟁 격화"
+        },
+        {
+          "sector": "바이오(HLB)",
+          "outlook": "FDA 승인 여부가 주가 방향성 결정, 성공 시 대폭 상승 실패 시 조정 불가피",
+          "key_drivers": "리보세라닙 FDA 재승인, 글로벌 파트너십 체결, 국내 바이오 육성 정책",
+          "headwinds": "FDA 승인 재불발 리스크, 임상시험 지연, 바이오 업종 전반 부진"
+        }
+      ],
+      "overall_recommendation": "선별적 매수 전략, 업종별 차별화 접근 필요",
+      "investment_theme": "AI 반도체 수혜, 전기차 전환 트렌드, 바이오 신약 개발 성과",
+      "risk_factors": "글로벌 지정학적 리스크, 금리 변동성, 중국 경제 둔화, FDA 승인 불확실성"
+    },
+    "upcoming_events": {
+      "earnings_calendar": "삼성전자 7월 23일 2분기 실적 발표, 현대차 7월 23일 2분기 실적 발표, HLB FDA 승인 결과 대기",
+      "dividend_schedule": "현대차 1분기 배당금 2,500원 7월 중 지급 예정",
+      "ipo_schedule": "7월 중 주요 IPO 일정 없음",
+      "corporate_actions": "HLB-HLB생명과학 합병 절차 진행 중, 삼성전자 자사주 소각 계획",
+      "economic_indicators": "7월 5일 미국 고용지표, 7월 15일 한국 무역수지, 7월 중 한국은행 통화정책회의"
+    },
+    "disclaimer": "본 보고서는 공개된 정보를 종합하여 작성되었으며, 투자 권유가 아닌 정보 제공 목적입니다. 모든 투자 결정은 개별 투자자의 판단과 책임하에 이루어져야 하며, 투자에는 원금 손실 위험이 있음을 유의하시기 바랍니다.",
+    "template_instructions": {
+      "purpose": "LLM이 일일시황보고서를 생성할 때 참고하는 구조화된 템플릿으로, 객관적이고 상세한 정보 제공이 목적",
+      "guidelines": {
+        "length": "각 섹션당 3-4개 핵심 포인트로 간결하면서도 상세하게 작성",
+        "format": "구조화된 JSON 형태로 가독성과 활용성 향상",
+        "content": "객관적 사실 기반의 최신 재무데이터, 시장 동향, 사업 현황을 포괄적으로 포함",
+        "risk_disclosure": "투자 리스크 및 면책사항 필수 포함으로 투자자 보호",
+        "empty_fields": "정보가 없는 경우 빈 문자열('') 처리하되, 가능한 관련 정보로 대체"
+      },
+      "data_sources": {
+        "financial_data": "금융감독원 전자공시시스템(DART), 기업 IR자료, 분기별 실적발표",
+        "market_data": "한국거래소(KRX) 실시간 데이터, 금융정보 제공업체(FnGuide, 연합인포맥스)",
+        "news_data": "주요 경제지, 기업 공시, 증권사 리서치 리포트, 업계 전문지",
+        "technical_data": "차트 분석 도구, 기술적 지표 분석, 거래량 패턴 분석"
+      },
+      "variable_fields": [
+        "report_metadata.date",
+        "companies[].current_price",
+        "companies[].financial_metrics",
+        "companies[].recent_performance",
+        "companies[].key_points",
+        "companies[].investment_view",
+        "companies[].risks",
+        "market_environment",
+        "market_outlook"
+      ]
+    }
+  }

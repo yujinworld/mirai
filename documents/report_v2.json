@@ -1,0 +1,330 @@
+"Here are the guidelines for generating a Korean daily market report. Please follow the JSON structure and requirements specified in this guidelines document:
+{
+  "guidelines_metadata": {
+    "title": "Daily Market Report Writing Guidelines",
+    "purpose": "Structured template for LLMs to generate comprehensive daily Korean stock market reports",
+    "target_language": "korean",
+    "output_format": "json",
+    "report_type": "daily_market_analysis",
+    "version": "1.0"
+  },
+  
+  "core_principles": {
+    "objectivity": {
+      "description": "Base analysis on factual data and official announcements",
+      "requirements": [
+        "Use publicly available data and official company disclosures",
+        "Avoid speculation and subjective opinions",
+        "Include both positive and negative factors for balanced analysis",
+        "Specify data sources and reference dates when possible"
+      ]
+    },
+    "accuracy": {
+      "description": "Ensure data precision and consistency",
+      "requirements": [
+        "Use consistent formatting for same data types (prices, ratios, dates)",
+        "Cross-verify financial metrics with official sources",
+        "Flag estimates and projections clearly",
+        "Prefer incomplete information over incorrect data"
+      ]
+    },
+    "structure": {
+      "description": "Maintain organized JSON hierarchy",
+      "requirements": [
+        "Complete all required fields in the template",
+        "Use consistent nested object structures",
+        "Arrange information by importance and relevance",
+        "Maintain logical flow between sections"
+      ]
+    }
+  },
+  
+  "section_guidelines": {
+    "report_metadata": {
+      "required_fields": {
+        "title": "Always use '일일시황보고'",
+        "date": "Format as 'YYYY년 MM월 DD일 (요일)' in Korean",
+        "format": "Always 'daily_market_report'",
+        "target_length": "Always 'short_form'",
+        "language": "Always 'korean'",
+        "market_status": "Current trading session status",
+        "overall_market_trend": "50-80 character summary of daily market movement and key themes"
+      },
+      "writing_tips": [
+        "Use Korea Standard Time for all dates",
+        "overall_market_trend should capture main index movements and primary market drivers",
+        "Include major policy announcements or global events affecting the market"
+      ]
+    },
+    
+    "companies": {
+      "structure": "Array of company objects with comprehensive analysis",
+      "required_fields": {
+        "company_name": {
+          "format": "Official Korean company name",
+          "examples": ["삼성전자", "현대자동차", "HLB"]
+        },
+        "stock_code": {
+          "format": "6-digit number string",
+          "examples": ["005930", "005380", "028300"]
+        },
+        "sector": {
+          "format": "Primary business sector in Korean",
+          "examples": ["반도체/IT", "자동차", "바이오"]
+        },
+        "current_price": {
+          "value": "Format as 'XX,XXX원' with comma separators",
+          "change": "Descriptive text about daily price movement",
+          "change_percent": "Format as '±X.XX%' to two decimal places",
+          "volume": "Trading volume analysis with context",
+          "trading_value": "Trading value with comparison to averages"
+        },
+        "price_range": {
+          "day_high": "Intraday high in won",
+          "day_low": "Intraday low in won",
+          "week_52_high": "52-week high with context",
+          "week_52_low": "52-week low with context"
+        },
+        "market_cap": {
+          "value": "Market capitalization in trillions of won",
+          "rank": "Ranking information (domestic and/or global)"
+        },
+        "ownership": {
+          "foreign_ownership": "Foreign ownership percentage and trends",
+          "institution_ownership": "Institutional ownership with key holders",
+          "individual_ownership": "Retail ownership percentage and characteristics"
+        },
+        "financial_metrics": {
+          "required_ratios": [
+            "per", 
+            "pbr", 
+            "roe", 
+            "debt_ratio", 
+            "current_ratio", 
+            "dividend_yield", 
+            "operating_margin"
+          ],
+          "format_guidelines": {
+            "per": "Include sector comparison (e.g., '12.6배 (업종 평균 대비 적정 수준)')",
+            "pbr": "Include valuation assessment",
+            "roe": "Include performance context",
+            "debt_ratio": "Include stability assessment",
+            "dividend_yield": "Include payout amount and policy"
+          }
+        },
+        "recent_performance": {
+          "required_fields": [
+            "q1_2025_revenue", 
+            "q1_2025_operating_profit", 
+            "q1_2025_net_profit", 
+            "revenue_growth_yoy", 
+            "operating_profit_growth_yoy", 
+            "guidance"
+          ],
+          "format": "Use Korean won in trillions/billions with YoY comparison",
+          "context": "Include industry trends and company-specific factors"
+        },
+        "analyst_consensus": {
+          "target_price_avg": "Price range from major securities firms",
+          "recommendation": "Dominant analyst opinion (매수/보유/매도)",
+          "analyst_count": "Number of covering analysts",
+          "upgrade_downgrade": "Recent rating changes by specific firms"
+        },
+        "key_points": {
+          "structure": "Array of 3-4 key insights",
+          "length": "80-120 characters per point",
+          "content_focus": [
+            "Latest financial performance or business achievements",
+            "Major product launches or business expansion",
+            "Future growth drivers or strategic developments"
+          ],
+          "style": "Factual statements with specific numbers and concrete details"
+        },
+        "investment_view": {
+          "valuation": "Current valuation assessment with metrics",
+          "target_price": "Securities firm target price ranges",
+          "strategy": "Investment strategy recommendation",
+          "rating": "Investment grade (매수/보유/매도)",
+          "price_catalyst": "Factors that could drive stock price movement"
+        },
+        "risks": {
+          "structure": "Array of 2-3 major risk factors",
+          "types": [
+            "Company-specific risks", 
+            "Industry/sector risks", 
+            "Market/economic risks"
+          ],
+          "style": "Specific and realistic risk scenarios"
+        },
+        "technical_analysis": {
+          "support_level": "Key support price level",
+          "resistance_level": "Key resistance price level",
+          "moving_averages": "20-day and 60-day moving average positions",
+          "momentum_indicators": "RSI, MACD signals",
+          "trend_direction": "Overall technical trend assessment"
+        }
+      }
+    },
+    
+    "market_environment": {
+      "required_indicators": {
+        "kospi_index": "KOSPI closing value with daily change and percentage",
+        "kosdaq_index": "KOSDAQ closing value with daily change and percentage",
+        "dollar_won_rate": "USD/KRW exchange rate with daily movement",
+        "oil_price": "WTI crude oil price in USD",
+        "interest_rate": "Bank of Korea base rate and Fed funds rate",
+        "vix_index": "Volatility index level and market sentiment",
+        "sector_rotation": "Money flow between sectors and investment themes"
+      },
+      "format_guidelines": [
+        "Include absolute values, daily changes, and percentage changes",
+        "Provide context for significant movements",
+        "Relate indicators to domestic market impact"
+      ]
+    },
+    
+    "global_factors": {
+      "required_markets": {
+        "us_market": "Major US index levels and key themes",
+        "china_market": "Shanghai Composite and policy developments",
+        "europe_market": "Major European indices and economic indicators",
+        "geopolitical_risk": "Current geopolitical tensions and market impact",
+        "trade_tensions": "International trade developments",
+        "regulatory_changes": "Policy changes affecting Korean markets"
+      }
+    },
+    
+    "market_outlook": {
+      "sector_summaries": {
+        "structure": "Array of sector analysis objects",
+        "required_fields": {
+          "sector": "Sector name (반도체, 자동차, 바이오, etc.)",
+          "outlook": "Sector outlook summary",
+          "key_drivers": "Positive factors driving sector performance",
+          "headwinds": "Negative factors or challenges"
+        }
+      },
+      "overall_recommendation": "Broad market investment strategy",
+      "investment_theme": "Current dominant investment themes",
+      "risk_factors": "Major market risk factors to monitor"
+    },
+    
+    "upcoming_events": {
+      "earnings_calendar": "Upcoming earnings announcements with dates",
+      "dividend_schedule": "Dividend payment schedules",
+      "ipo_schedule": "Upcoming IPOs and public offerings",
+      "corporate_actions": "Mergers, splits, buybacks, etc.",
+      "economic_indicators": "Important economic data releases"
+    }
+  },
+  
+  "writing_standards": {
+    "content_quality": {
+      "depth": "Provide comprehensive analysis while maintaining readability",
+      "balance": "Include both bullish and bearish perspectives",
+      "specificity": "Use concrete numbers, dates, and factual details",
+      "context": "Relate individual stock movements to broader market themes"
+    },
+    "language_style": {
+      "tone": "Professional and objective",
+      "terminology": "Use standard Korean financial terminology",
+      "clarity": "Avoid jargon when simpler terms convey the same meaning",
+      "consistency": "Maintain consistent style throughout the report"
+    },
+    "data_formatting": {
+      "prices": "Use Korean won with comma separators (예: 63,300원)",
+      "percentages": "Use ± symbol with two decimal places (예: +1.83%)",
+      "large_numbers": "Use 조 (trillion) and 억 (billion) for large amounts",
+      "dates": "Use Korean date format (예: 2025년 7월 3일)"
+    }
+  },
+  
+  "technical_requirements": {
+    "json_structure": {
+      "validity": "Must be valid JSON with proper escaping",
+      "encoding": "UTF-8 encoding for Korean characters",
+      "nesting": "Properly nested objects and arrays",
+      "completeness": "All required fields must have appropriate values"
+    },
+    "field_handling": {
+      "missing_data": "Use empty string ('') rather than null for missing information",
+      "optional_fields": "Provide information when available",
+      "data_types": "Maintain consistent data types for similar fields"
+    },
+    "length_guidelines": {
+      "total_report": "10,000-15,000 characters",
+      "company_analysis": "2,000-3,000 characters per company",
+      "key_points": "3-4 points of 80-120 characters each",
+      "market_summary": "500-800 characters for market environment"
+    }
+  },
+  
+  "quality_assurance": {
+    "fact_checking": [
+      "Verify stock prices and financial metrics",
+      "Cross-reference company announcements",
+      "Confirm market index movements",
+      "Validate economic indicator data"
+    ],
+    "consistency_checks": [
+      "Ensure uniform formatting across all companies",
+      "Maintain consistent sector classifications",
+      "Verify calculation accuracy for ratios and percentages",
+      "Check for logical consistency in analysis"
+    ],
+    "completeness_review": [
+      "All required fields populated",
+      "Balanced coverage of positive and negative factors",
+      "Appropriate level of detail for each section",
+      "Proper risk disclosures included"
+    ]
+  },
+  
+  "legal_compliance": {
+    "disclaimers": {
+      "required_statement": "This report is for informational purposes only and does not constitute investment advice",
+      "risk_warning": "All investments carry risk of principal loss",
+      "responsibility": "Investment decisions are solely the responsibility of individual investors"
+    },
+    "content_restrictions": [
+      "Avoid specific buy/sell recommendations",
+      "Do not guarantee future performance",
+      "Include appropriate risk disclosures",
+      "Acknowledge limitations of analysis"
+    ]
+  },
+  
+  "data_sources": {
+    "recommended_sources": {
+      "financial_data": "DART (전자공시시스템), Company IR materials, Quarterly reports",
+      "market_data": "KRX (한국거래소) real-time data, FnGuide, Yonhap Infomax",
+      "news_data": "Major economic newspapers, Company announcements, Securities research",
+      "technical_data": "Chart analysis tools, Technical indicators, Volume patterns"
+    },
+    "data_freshness": "Use most recent available data, note cut-off times for real-time information"
+  },
+  
+  "output_validation": {
+    "pre_submission_checklist": [
+      "JSON syntax validation",
+      "Korean character encoding verification",
+      "All required fields completed",
+      "Financial calculations double-checked",
+      "Disclaimer and risk warnings included",
+      "Consistent formatting throughout",
+      "Logical flow and readability"
+    ]
+  },
+  
+  "example_usage": {
+    "prompt_template": "Using the provided JSON template structure, generate a comprehensive daily market report for Korean stocks. Follow the guidelines for each section, maintain objectivity, and ensure all required fields are populated with current market data.",
+    "customization_options": [
+      "Adjust company selection based on market cap or trading volume",
+      "Focus on specific sectors or themes",
+      "Emphasize particular market events or announcements",
+      "Include seasonal or cyclical factors"
+    ]
+  }
+}
+
+Using the provided template structure, generate a comprehensive daily market report for Korean stocks with current market data."
